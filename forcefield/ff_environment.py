@@ -18,7 +18,7 @@ class TargetReach():
         "goal arg must satisfy goal[0] < goal[1] and goal[2] < goal[3]. Goal is (x1, x2, y1, y2) \
         tuple with (x1, y1) the top left corner and (x2, y2) the bottom right corner of the goal box."
         
-        self.action_size = 2 # (x_velocity, y_velocity)
+        self.action_size = 2 # (x_acceleration, y_acceleration)
         self.max_len = max_len
         self.discover = False 
         
