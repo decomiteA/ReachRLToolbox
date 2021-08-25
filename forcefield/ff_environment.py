@@ -3,7 +3,7 @@ import torch
 
 class TargetReach():
     
-    def __init__(self, start_pos = (.5, 1), goal = (.1, 0, .9, -.8), space_padding = 5, max_len=60, discover=False):
+    def __init__(self, start_pos = (.5, 1), goal = (.1, .9, -.8, 0), space_padding = 5, max_len=60, discover=False):
         """Initialize forcefield environment.
         Params
         ======
@@ -123,7 +123,7 @@ class TargetReach():
         
         return self 
     
-class MultiTarget(Workspace):
+class MultiTarget(TargetReach):
     pass
                            
         

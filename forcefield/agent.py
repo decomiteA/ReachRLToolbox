@@ -54,9 +54,6 @@ class Agent():
         self.critic_target = Critic(state_size, action_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
-        # Noise process
-        # self.noise = OUNoise(action_size, random_seed)
-
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
     
@@ -255,17 +252,9 @@ class Trajectories():
         self.trajectories = []
         self.max_len = env.max_len
         
-        # goal box
-        self.goal_left = env.goal_left
-        self.goal_top = env.goal_top
-        self.goal_right = env.goal_right
-        self.goal_bottom = env.goal_bottom 
-        
-        # workspace dims
-        self.max_top = env.max_top
-        self.max_left = env.max_left
-        self.max_bottom = env.max_bottom
-        self.max_right = env.max_right
+        # goal box and workspace bounds
+        self.goal = env.goal
+        self.bounds = env.bounds 
         
     def add_episode(self, positions):
         self.trajectories.append(positions)
@@ -284,12 +273,12 @@ class Trajectories():
         else:
             cmap = cm.get_cmap(color, self.max_len)
             
-        xlims = (self.max_left, self.max_right) 
-        ylims = (self.max_bottom, self.max_top)
+        xlims = (self.bounds[0], self.bounds[1]) 
+        ylims = (self.bounds[2], self.bounds[3])
         fig, ax = plt.subplots()
 
-        goal_patch = patches.Rectangle((self.goal_left, self.goal_bottom), self.goal_right-self.goal_left, \
-                                       self.goal_top-self.goal_bottom, linewidth=1, alpha=boxalpha, \
+        goal_patch = patches.Rectangle((self.goal[0], self.goal[2]), self.goal[1]-self.goal[0], \
+                                       self.goal[3]-self.goal[2], linewidth=1, alpha=boxalpha, \
                                        edgecolor=boxcol, facecolor=boxcol)
         
         ax.set_xlim(xlims[0], xlims[1])
