@@ -319,7 +319,7 @@ class Trajectories():
         fig, axs=plt.subplots(1,2)
         # Plotting the score per episode
 
-        axs[0].plt(range(len(self.scores)),self.scores,'b',lw=2)
+        axs[0].plot(range(len(self.scores)),self.scores,'b',lw=2)
         axs[0].xlabel('Episode')
         axs[0].ylabel('Total reward')
         axs[0].title('Reward per episode')
@@ -352,11 +352,11 @@ class Trajectories():
         maxtime = len(self.trajectories[idx])-1
         fig, axs=plt.subplots(2,2)
         
-        axs[0,0].plt(range(maxtime), self.trajectories[idx][0],'r-',lw=2)
+        axs[0,0].plot(range(maxtime), self.trajectories[idx][0],'r-',lw=2)
         axs[0,0].ylabel('x-position')
         axs[0,0].xlabel('Time');
 
-        axs[0,1].plt(range(maxtime), self.trajectories[idx][1],'r-',lw=2)
+        axs[0,1].plot(range(maxtime), self.trajectories[idx][1],'r-',lw=2)
         axs[0,1].ylabel('y-position')
         axs[0,1].xlabel('Time')
 
