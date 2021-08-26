@@ -246,10 +246,14 @@ class Trajectories():
         Params
         ======
         trajectories = list of trajectories, where each trajectory is an array or list of (x, y) coordinates at each timestep.
+        scores = list of total scores, where each score is a floating point number
+        actions = list of actions, where each action is an array or list of (ux,uy) actions at each time step
         env = environment in which trajectories were performed. indicates goal box, workspace dimensions, etc. 
         """
         
         self.trajectories = []
+        self.scores = []
+        self.actions = []
         self.max_len = env.max_len
         
         # goal box and workspace bounds
@@ -299,5 +303,75 @@ class Trajectories():
             ax.legend()
         
         return fig, ax
+
+    def plot_converged(self,legend=False,scale=True,boxcol='r',boxalpha=.1):
+        """Plot the results of the RL algorithm. The first subplot represents the 
+        total gain per episode, the second one represents the trajectory of the last episode
+        =======
+        Params 
+        =======
+        TODO
+        """
+
+        goal_patches = patches.Rectangle((self.goal[0], self.goal[2]),self.goal[1]-self.goal[0], \
+                                        self.goal[3]-self.goal[2], lw=1, alpha=boxalpha, edgecolor=boxcol, facecolor=boxcol)
+
+        fig, axs=plt.subplots(1,2)
+        # Plotting the score per episode
+
+        axs[0].plt(range(len(self.scores)),self.scores,'b',lw=2)
+        axs[0].xlabel('Episode')
+        axs[0].ylabel('Total reward')
+        axs[0].title('Reward per episode')
+        
+        # Plotting the last trajectory
+
+        for i,pt in enumerate(self.trajectories[-1]):
+            if legend and i==0:
+                axs[1].plot(pt[0], pt[1],'g+', label='start',ms=15)
+            elif legend and i==len(self.trajectories[-1])-1:
+                axs[1].plot(pt[0], pt[1],'ro', label='end',ms=15)
+            else:
+                continue
+        axs[1].plot(self.trajectories[-1][0],self.trajectories[-1][1],'k-',lw=2)
+        axs[1].add_patch(goal_patches)
+        axs[1].xlabel('x-position') 
+        axs[1].ylable('y-position')
+        axs[1].title('Last trajectory')
+        
+        return fig, axs
+
+    def plot_kinematics(self,idx,legend=False,scale=True):
+        """Plot the kinematics parameters of the trajectory associated with index 'idx'
+        =======
+        Params 
+        =======
+        TODO
+        """
+        
+        maxtime = len(self.trajectories[idx])-1
+        fig, axs=plt.subplots(2,2)
+        
+        axs[0,0].plt(range(maxtime), self.trajectories[idx][0],'r-',lw=2)
+        axs[0,0].ylabel('x-position')
+        axs[0,0].xlabel('Time');
+
+        axs[0,1].plt(range(maxtime), self.trajectories[idx][1],'r-',lw=2)
+        axs[0,1].ylabel('y-position')
+        axs[0,1].xlabel('Time')
+
+        axs[1,0].plot(range(maxtime), self.trajectories[idx][2],'r-',lw=2)
+        axs[1,0].ylabel('x-velocity')
+        axs[1,0].xlabel('Time')
+
+        axs[1,1].plot(range(maxtime), self.trajectories[idx][3],'r-',lw=2)
+        axs[1,1].ylabel('y-velocity')
+        axs[1,1].ylabel('Time')
+
+        return fig, axs
+
+        
+
+
     
     
