@@ -53,6 +53,7 @@ class TargetReach():
         """
         
         self.pos = pos
+        self.vel = (0,0)
         self.state = np.array(list(pos) + [0, 0, 0, 0]) # State is [x_position, y_position, x_velocity, y_velocity].
         self.next_state = None
         self.reward = 0
@@ -97,7 +98,7 @@ class TargetReach():
             y_vel = y_vel + self.ff_force[1]*dt
 
         # Update position and state
-        self.pos = (x_pos, y_pos)
+        self.pos, self.vel = (x_pos, y_pos), (x_vel, y_vel)
         self.state = np.array([x_pos, y_pos, x_vel, y_vel, x_force, y_force])
         
         # Check if finished 

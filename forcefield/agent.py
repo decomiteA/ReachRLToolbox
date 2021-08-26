@@ -158,6 +158,7 @@ class Agent():
             score = 0                      # initialize agent scores
             trajectory = [state[:2]]           # initialize trajectory 
             actions = [state[2:]]
+            speed = [state[2,3]]
             self.reset()                  # reset noise process for action exploration
 
             while True:
@@ -172,14 +173,15 @@ class Agent():
                 self.step(state, action, reward, next_state, done)
 
                 score += reward                         # update the score (for each agent)
-                state = next_state                               # enter next states
+                state = next_state # enter next states
+                speed.append(env_info.vel)
                 trajectory.append(env_info.pos)
                 actions.append(action)
 
                 if done:
                     break
 
-            trajectories.add_episode(trajectory)
+            trajectories.add_episode(trajectory,speed, score)
 
             scores_deque.append(np.mean(score))
             scores.append(np.mean(score))
@@ -245,13 +247,14 @@ class Trajectories():
         """"
         Params
         ======
-        trajectories = list of trajectories, where each trajectory is an array or list of (x, y) coordinates at each timestep.
+        states = list of states (pos, vel, force), where each trajectory is an array or list of (x, y) coordinates at each timestep.
         scores = list of total scores, where each score is a floating point number
         actions = list of actions, where each action is an array or list of (ux,uy) actions at each time step
         env = environment in which trajectories were performed. indicates goal box, workspace dimensions, etc. 
         """
         
         self.trajectories = []
+        self.speeds =[]
         self.scores = []
         self.actions = []
         self.max_len = env.max_len
@@ -260,8 +263,10 @@ class Trajectories():
         self.goal = env.goal
         self.bounds = env.bounds 
         
-    def add_episode(self, positions):
+    def add_episode(self, positions, speeds, score):
         self.trajectories.append(positions)
+        self.speeds.append(speeds)
+        self.scores.append(score)
         
     def plot(self, idx, legend = False, color = 'magma', scale=True, boxcol = 'r', boxalpha = 0.1):
         """Plot a select number of indices.
@@ -320,9 +325,9 @@ class Trajectories():
         # Plotting the score per episode
 
         axs[0].plot(range(len(self.scores)),self.scores,'b',lw=2)
-        axs[0].xlabel('Episode')
-        axs[0].ylabel('Total reward')
-        axs[0].title('Reward per episode')
+        axs[0].set_xlabel('Episode')
+        axs[0].set_ylabel('Total reward')
+        axs[0].set_title('Reward per episode')
         
         # Plotting the last trajectory
 
@@ -335,9 +340,9 @@ class Trajectories():
                 continue
         axs[1].plot(self.trajectories[-1][0],self.trajectories[-1][1],'k-',lw=2)
         axs[1].add_patch(goal_patches)
-        axs[1].xlabel('x-position') 
-        axs[1].ylable('y-position')
-        axs[1].title('Last trajectory')
+        axs[1].set_xlabel('x-position') 
+        axs[1].set_ylabel('y-position')
+        axs[1].set_title('Last trajectory')
         
         return fig, axs
 
@@ -348,25 +353,31 @@ class Trajectories():
         =======
         TODO
         """
-        
-        maxtime = len(self.trajectories[idx])-1
+        xpos,ypos,xvel,yvel=[],[],[],[]
+
+        for i,pt in enumerate(self.trajectories[idx]):
+            xpos.append(pt[0])
+            ypos.append(pt[1])
+            xvel.append(self.speeds[idx][0])
+            yvel.append(self.speeds[idx][1])
+        maxtime = len(xpos)
         fig, axs=plt.subplots(2,2)
-        
-        axs[0,0].plot(range(maxtime), self.trajectories[idx][0],'r-',lw=2)
-        axs[0,0].ylabel('x-position')
-        axs[0,0].xlabel('Time');
+        axs[0,0].set_xlabel('hello world') 
+        axs[0,0].plot(range(maxtime),xpos,'r-',lw=2)
+        axs[0,0].set_ylabel('x-position')
+        axs[0,0].set_xlabel('Time');
 
-        axs[0,1].plot(range(maxtime), self.trajectories[idx][1],'r-',lw=2)
-        axs[0,1].ylabel('y-position')
-        axs[0,1].xlabel('Time')
+        axs[0,1].plot(range(maxtime), ypos,'r-',lw=2)
+        axs[0,1].set_ylabel('y-position')
+        axs[0,1].set_xlabel('Time')
 
-        axs[1,0].plot(range(maxtime), self.trajectories[idx][2],'r-',lw=2)
-        axs[1,0].ylabel('x-velocity')
-        axs[1,0].xlabel('Time')
+        axs[1,0].plot(range(maxtime), xvel,'r-',lw=2)
+        axs[1,0].set_ylabel('x-velocity')
+        axs[1,0].set_xlabel('Time')
 
-        axs[1,1].plot(range(maxtime), self.trajectories[idx][3],'r-',lw=2)
-        axs[1,1].ylabel('y-velocity')
-        axs[1,1].ylabel('Time')
+        axs[1,1].plot(range(maxtime), yvel,'r-',lw=2)
+        axs[1,1].set_ylabel('y-velocity')
+        axs[1,1].set_ylabel('Time')
 
         return fig, axs
 
