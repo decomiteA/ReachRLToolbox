@@ -303,7 +303,7 @@ class Trajectories():
         
         if legend:
             ax.legend()
-        
+        plt.show()
         return fig, ax
 
     def plot_converged(self,legend=False,boxcol='r',boxalpha=.1):
@@ -340,7 +340,7 @@ class Trajectories():
         axs[1].set_xlabel('x-position') 
         axs[1].set_ylabel('y-position')
         axs[1].set_title('Last trajectory')
-        
+        plt.show()
         return fig, axs
 
     def plot_kinematics(self,idx):
@@ -376,6 +376,7 @@ class Trajectories():
         axs[1,1].set_xlabel('Time')
         axs[1,1].yaxis.tick_right()
         axs[1,1].yaxis.set_label_position('right')
+        plt.show()
 
         return fig, axs
 
