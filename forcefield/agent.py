@@ -17,9 +17,9 @@ BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-4        # learning rate of the critic
+LR_CRITIC = 1e-6        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
-NOISE_WEIGHT_DECAY = 0.99
+NOISE_WEIGHT_DECAY = 0.7
 NOISE_WEIGHT_START = 1
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -138,19 +138,21 @@ class Agent():
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
             
-    def train_ddpg(self, env, n_episodes = 1000, print_every = 100):
+    def train_ddpg(self, env, n_episodes = 1000, print_every = 100, stop = True):
         """Train the agent in the Forcefield environment using ddpg. 
         Params
         ======
             env: environment e.g. of type Forcefield
             n_episodes: int, max number of episodes training
             print_every: int, print new line with average scores every n episodes. 
+            stop: bool, stops training if task is learned. 
         """
         trajectories = Trajectories(env)
     
         scores = []
         actions_tracker = []
         scores_deque = deque(maxlen=print_every)
+        solved = False
 
         for i_episode in range(n_episodes):
             env_info = env.reset()
@@ -192,11 +194,13 @@ class Agent():
                 torch.save(self.critic_local.state_dict(), 'critic_model.pth')
                 print('\rEpisode {} \tAverage Reward: {:.2f}'.format(i_episode, np.mean(scores_deque)))
 
-            if np.mean(scores_deque) >= 0.07:
+            if not solved and np.mean(scores_deque) >= 12:
+                solved = True 
                 print('\nEnvironment solved in {:d} episodes!\t Average Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
                 torch.save(self.actor_local.state_dict(), 'actor_solved.pth')
                 torch.save(self.critic_local.state_dict(), 'critic_solved.pth')
-                break
+                if stop:
+                    break
 
         return scores, trajectories, actions_tracker
         

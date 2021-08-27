@@ -102,7 +102,7 @@ class TargetReach():
         
         # Check if finished 
         if self.goal[0] <= self.pos[0] and self.goal[1] >= self.pos[0]:         # reached goal in x dimension 
-            if self.goal[2] >= self.pos[1] and self.goal[3] <= self.pos[1]: # reached goal in y dimension
+            if self.goal[2] <= self.pos[1] and self.goal[3] >= self.pos[1]: # reached goal in y dimension
                 self.target_counter += 1
                 if self.target_counter >= stay_time:
                     self.reward = 20 - np.linalg.norm(action, 2) * cost # INCREASE FOR SUCCESSFUL TRIALS
