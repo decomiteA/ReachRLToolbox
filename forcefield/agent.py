@@ -158,7 +158,6 @@ class Agent():
             score = 0                      # initialize agent scores
             trajectory = [state[:2]]           # initialize trajectory 
             actions = [state[2:]]
-            speed = [state[2,3]]
             self.reset()                  # reset noise process for action exploration
 
             while True:
@@ -174,14 +173,13 @@ class Agent():
 
                 score += reward                         # update the score (for each agent)
                 state = next_state # enter next states
-                speed.append(env_info.vel)
                 trajectory.append(env_info.pos)
                 actions.append(action)
 
                 if done:
                     break
 
-            trajectories.add_episode(trajectory,speed, score)
+            trajectories.add_episode(trajectory, score)
 
             scores_deque.append(np.mean(score))
             scores.append(np.mean(score))
@@ -263,9 +261,8 @@ class Trajectories():
         self.goal = env.goal
         self.bounds = env.bounds 
         
-    def add_episode(self, positions, speeds, score):
+    def add_episode(self, positions, score):
         self.trajectories.append(positions)
-        self.speeds.append(speeds)
         self.scores.append(score)
         
     def plot(self, idx, legend = False, color = 'magma', scale=True, boxcol = 'r', boxalpha = 0.1):
@@ -309,13 +306,13 @@ class Trajectories():
         
         return fig, ax
 
-    def plot_converged(self,legend=False,scale=True,boxcol='r',boxalpha=.1):
+    def plot_converged(self,legend=False,boxcol='r',boxalpha=.1):
         """Plot the results of the RL algorithm. The first subplot represents the 
         total gain per episode, the second one represents the trajectory of the last episode
         =======
         Params 
         =======
-        TODO
+        legend : if True represents the first & last dots differently
         """
 
         goal_patches = patches.Rectangle((self.goal[0], self.goal[2]),self.goal[1]-self.goal[0], \
@@ -346,38 +343,39 @@ class Trajectories():
         
         return fig, axs
 
-    def plot_kinematics(self,idx,legend=False,scale=True):
+    def plot_kinematics(self,idx):
         """Plot the kinematics parameters of the trajectory associated with index 'idx'
         =======
         Params 
         =======
-        TODO
+        idx is the index of the trajectory we want to investigate
         """
-        xpos,ypos,xvel,yvel=[],[],[],[]
+        xpos,ypos=[],[]
 
         for i,pt in enumerate(self.trajectories[idx]):
             xpos.append(pt[0])
             ypos.append(pt[1])
-            xvel.append(self.speeds[idx][0])
-            yvel.append(self.speeds[idx][1])
+
         maxtime = len(xpos)
-        fig, axs=plt.subplots(2,2)
-        axs[0,0].set_xlabel('hello world') 
+        fig, axs=plt.subplots(2,2,sharex=True) 
         axs[0,0].plot(range(maxtime),xpos,'r-',lw=2)
         axs[0,0].set_ylabel('x-position')
-        axs[0,0].set_xlabel('Time');
+        
 
         axs[0,1].plot(range(maxtime), ypos,'r-',lw=2)
         axs[0,1].set_ylabel('y-position')
-        axs[0,1].set_xlabel('Time')
+        axs[0,1].yaxis.tick_right()
+        axs[0,1].yaxis.set_label_position('right')
 
-        axs[1,0].plot(range(maxtime), xvel,'r-',lw=2)
+        axs[1,0].plot(range(maxtime-1), np.diff(np.array(xpos)),'r-',lw=2)
         axs[1,0].set_ylabel('x-velocity')
         axs[1,0].set_xlabel('Time')
 
-        axs[1,1].plot(range(maxtime), yvel,'r-',lw=2)
+        axs[1,1].plot(range(maxtime-1), np.diff(np.array(ypos)),'r-',lw=2)
         axs[1,1].set_ylabel('y-velocity')
-        axs[1,1].set_ylabel('Time')
+        axs[1,1].set_xlabel('Time')
+        axs[1,1].yaxis.tick_right()
+        axs[1,1].yaxis.set_label_position('right')
 
         return fig, axs
 

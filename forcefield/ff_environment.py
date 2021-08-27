@@ -53,7 +53,6 @@ class TargetReach():
         """
         
         self.pos = pos
-        self.vel = (0,0)
         self.state = np.array(list(pos) + [0, 0, 0, 0]) # State is [x_position, y_position, x_velocity, y_velocity].
         self.next_state = None
         self.reward = 0
