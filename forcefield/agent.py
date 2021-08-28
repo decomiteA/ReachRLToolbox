@@ -299,10 +299,10 @@ class Trajectories():
             else:
                 ax.plot(pt[0], pt[1], 'o', color=cmap.colors[i])
 
-        ax.add_patch(goal_patch)
+        ax.add_patch(goal_patch);
         
         if legend:
-            ax.legend()
+            ax.legend();
         
         return fig, ax
 
@@ -339,7 +339,7 @@ class Trajectories():
         axs[1].add_patch(goal_patches)
         axs[1].set_xlabel('x-position') 
         axs[1].set_ylabel('y-position')
-        axs[1].set_title('Last trajectory')
+        axs[1].set_title('Last trajectory');
         
         return fig, axs
 
