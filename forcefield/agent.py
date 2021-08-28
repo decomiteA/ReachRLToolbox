@@ -80,11 +80,6 @@ class Agent():
             action += noise_sample
         return np.clip(action, -.5, .5)
 
-    def reset(self):
-        #self.noise.reset()
-        pass
-        
-
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
         Q_targets = r + γ * critic_target(next_state, actor_target(next_state))
@@ -155,6 +150,7 @@ class Agent():
         solved = False
 
         for i_episode in range(n_episodes):
+            
             env_info = env.reset()
             state = env_info.state        # current state
             score = 0                      # initialize agent scores
