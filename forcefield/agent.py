@@ -17,7 +17,7 @@ BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-6        # learning rate of the critic
+LR_CRITIC = 1e-5        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
 NOISE_WEIGHT_DECAY = 0.7
 NOISE_WEIGHT_START = 1
@@ -153,10 +153,9 @@ class Agent():
             
             env_info = env.reset()
             state = env_info.state        # current state
-            score = 0                      # initialize agent scores
-            trajectory = [state[:2]]           # initialize trajectory 
+            score = 0                     # initialize agent scores
+            trajectory = [state[:2]]      # initialize trajectory 
             actions = [state[2:]]
-            self.reset()                  # reset noise process for action exploration
 
             while True:
 
@@ -190,13 +189,15 @@ class Agent():
                 torch.save(self.critic_local.state_dict(), 'critic_model.pth')
                 print('\rEpisode {} \tAverage Reward: {:.2f}'.format(i_episode, np.mean(scores_deque)))
 
-            if not solved and np.mean(scores_deque) >= 12:
-                solved = True 
-                print('\nEnvironment solved in {:d} episodes!\t Average Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
-                torch.save(self.actor_local.state_dict(), 'actor_solved.pth')
-                torch.save(self.critic_local.state_dict(), 'critic_solved.pth')
-                if stop:
-                    break
+            if np.mean(scores_deque) >= 5:
+                if not solved:
+                    solved = True 
+                    print('\nEnvironment solved in {:d} episodes!\t Average Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
+                    torch.save(self.actor_local.state_dict(), 'actor_solved.pth')
+                    torch.save(self.critic_local.state_dict(), 'critic_solved.pth')
+                
+            if solved and stop:
+                break
 
         return scores, trajectories, actions_tracker
         
