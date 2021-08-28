@@ -80,11 +80,6 @@ class Agent():
             action += noise_sample
         return np.clip(action, -.5, .5)
 
-    def reset(self):
-        #self.noise.reset()
-        pass
-        
-
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
         Q_targets = r + γ * critic_target(next_state, actor_target(next_state))
@@ -153,12 +148,13 @@ class Agent():
         scores_deque = deque(maxlen=print_every)
 
         for i_episode in range(n_episodes):
+            
             env_info = env.reset()
-            state = env_info.state        # current state
+            state = env_info.state         # current state
             score = 0                      # initialize agent scores
-            trajectory = [state[:2]]           # initialize trajectory 
+            trajectory = [state[:2]]       # initialize trajectory 
             actions = [state[2:]]
-            self.reset()                  # reset noise process for action exploration
+            self.reset()                   # reset noise process for action exploration
 
             while True:
 
@@ -171,8 +167,8 @@ class Agent():
 
                 self.step(state, action, reward, next_state, done)
 
-                score += reward                         # update the score (for each agent)
-                state = next_state # enter next states
+                score += reward                           # update the score (for each agent)
+                state = next_state                        # enter next states
                 trajectory.append(env_info.pos)
                 actions.append(action)
 
