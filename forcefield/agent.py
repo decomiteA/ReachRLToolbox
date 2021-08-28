@@ -302,7 +302,9 @@ class Trajectories():
         ax.add_patch(goal_patch);
         
         if legend:
-            ax.legend();
+            ax.legend()
+            
+        plt.show()
         
         return fig, ax
 
@@ -339,7 +341,8 @@ class Trajectories():
         axs[1].add_patch(goal_patches)
         axs[1].set_xlabel('x-position') 
         axs[1].set_ylabel('y-position')
-        axs[1].set_title('Last trajectory');
+        axs[1].set_title('Last trajectory')
+        plt.show()
         
         return fig, axs
 
@@ -376,6 +379,7 @@ class Trajectories():
         axs[1,1].set_xlabel('Time')
         axs[1,1].yaxis.tick_right()
         axs[1,1].yaxis.set_label_position('right')
+        plt.show()
 
         return fig, axs
 
