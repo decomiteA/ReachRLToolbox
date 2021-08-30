@@ -66,8 +66,9 @@ class TargetReach():
         """Calculates the euclidian/shortest distance of agent from target box. Used to calculate the error cost applied to \
         reward when discovery=False, i.e. the agent can "see" how far it is from the target box. 
         """
-        # note to antoine: you can refer to self.goal_left, self.goal_right, etc here and then return distance and use it in step
-        pass 
+            dist = np.sqrt(np.min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))**2+ np.min(np.absolute(pos[1]-self.goal[2]),np.absolute(pos[1]-self.goal[3]))**2)
+        return dist
+    
         
     def step(self, action, cost = 0.002, stay_time=1):
         """Agent acts in the environment and gets the resulting next state and reward obtained.
@@ -115,6 +116,7 @@ class TargetReach():
                 
         elif self.time >= self.max_len:     # reached time limit
             self.reward = -10 - np.linalg.norm(action, 2) * cost
+            self.reward += self.dist2tar(self,self.pos)*(1-self.discover)
             self.done = True 
             
         else:                             # not finished 
