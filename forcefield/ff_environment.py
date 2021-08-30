@@ -66,7 +66,7 @@ class TargetReach():
         """Calculates the euclidian/shortest distance of agent from target box. Used to calculate the error cost applied to \
         reward when discovery=False, i.e. the agent can "see" how far it is from the target box. 
         """
-            dist = np.sqrt(np.min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))**2+ \
+        dist = np.sqrt(np.min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))**2+ \
                     np.min(np.absolute(pos[1]-self.goal[2]),np.absolute(pos[1]-self.goal[3]))**2)
         return dist
     
