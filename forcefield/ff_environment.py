@@ -99,6 +99,7 @@ class TargetReach():
 
         # Update position and state
         self.pos = (x_pos, y_pos)
+        self.vel = (x_vel, y_vel)
         self.state = np.array([x_pos, y_pos, x_vel, y_vel, x_force, y_force])
         
         # Check if finished 

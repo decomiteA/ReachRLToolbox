@@ -300,5 +300,77 @@ class Trajectories():
             ax.legend()
         
         return fig, ax
+
+    def plot_converged(self,legend=False,boxcol='r',boxalpha=.1):
+        """Plot the results of the RL algorithm. The first subplot represents the 
+        total gain per episode, the second one represents the trajectory of the last episode
+        =======
+        Params
+        =======
+        legend: if True represents the first & last dots differently
+        """
+
+        goal_patches=patches.Rectangle((self.goal[0], self.goal[2]),self.goal[1]-self.goal[0], \
+                                      self.goal[3]-self.goal[2],lw=1,alpha=boxalpha,edgecolor=boxcol,facecolor=boxcol)
+
+        fig, axs=plt.subplots(1,2)
+
+        axs[0].plot(range(len(self.scores)),self.scores,'b',lw=2)
+        axs[0].set_xlabel('Episode')
+        axs[0].set_ylabel('Total reward')
+        axs[0].set_title('Reward per episode')
+
+        for i,pt in enumerate(self.trajectories[-1]):
+            if legend and i==0:
+                axs[1].plot(pt[0],pt[1],'g+',label='start',ms=15)
+            elif legend and i==len(self.trajectories[-1])-1:
+                axs[1].plot(pt[0],pt[1],'ro',label='end',ms=15)
+            else:
+                continue
+
+        axs[1].plot(self.trajectories[-1][0],self.trajectories[-1][1],'k-',lw=2)
+        axs[1].add_patch(goal_patches)
+        axs[1].set_xlabel('x-position')
+        axs[1].set_ylabel('y-position')
+        axs[1].set_title('Last trajectory')
+        plt.show()
+
+        return fig,axs
+
+    def plot_kinematics(self,idx):
+        """Plot the kinematics parameters of the trajectory associated with index 'idx'
+        =======
+        Params
+        =======
+        idx is the index of the trajectory we want to investigate
+        """
+        xpos,ypos=[],[]
+
+        for i,pt in enumerate(self.trajectories[idx]):
+            xpos.append(pt[0])
+            ypos.append(pt[1])
+
+        maxtime=len(xpos)
+        fig, axs=plt.subplots(2,2,sharex=True)
+        axs[0,0].plot(range(maxtime),xpos,'r-',lw=2)
+        axs[0,0].set_ylabel('x-position')
+
+        axs[0,1].plot(range(maxtime),ypos,'r-',lw=2)
+        axs[0,1].set_ylabel('y-position')
+        axs[0,1].yaxis.tick_right()
+        axs[0,1].yaxis.set_label_position('right')
+
+        axs[1,0].plot(range(maxtime-1),np.diff(np.array(xpos)),'r-',lw=2)
+        axs[1,0].set_ylabel('x-velocity')
+        axs[1,0].set_xlabel('Time')
+
+        axs[1,1].plot(range(maxtime-1),np.diff(np.array(ypos)),'r-',lw=2)
+        axs[1,1].set_ylabel('y-velocity')
+        axs[1,1].set_xlabel('Time')
+        axs[1,1].yaxis.tick_right()
+        axs[1,1].yaxis.set_label_position('right')
+        plt.show()
+
+        return fig, axs
     
     
