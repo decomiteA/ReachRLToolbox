@@ -84,7 +84,7 @@ class TargetReach():
         self.time += 1
         dt, kv, tau = 0.01, 1, 0.04
 
-        # Calculate new state using the Newtonian dynamics
+        # Calculate new state using the Newtonian dynamics - verif
         x_pos = self.state[0] + self.state[2]*dt
         y_pos = self.state[1] + self.state[3]*dt
         x_vel = (1-kv*dt) * self.state[2] + dt * self.state[4]
