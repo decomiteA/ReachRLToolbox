@@ -79,7 +79,7 @@ class TargetReach():
         return dist
     
         
-    def step(self, action, cost = 20, stay_time=1):
+    def step(self, action, cost = 0.02, stay_time=1):
         """Agent acts in the environment and gets the resulting next state and reward obtained.
         The system dynamics comes from Nashed et al. 2012
         Params
