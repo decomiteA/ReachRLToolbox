@@ -78,7 +78,7 @@ class Agent():
             noise_sample = np.random.normal(scale=1) * self.noise_w
             self.noise_w = self.noise_w * self.noise_wd
             action += noise_sample
-        return np.clip(action, -.5, .5)
+        return np.clip(action, -50, 50)
 
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
@@ -99,7 +99,7 @@ class Agent():
         actions_next = self.actor_target(next_states)
         Q_targets_next = self.critic_target(next_states, actions_next)
         # Compute Q targets for current states (y_i)
-        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        Q_targets = rewards + (gamma * Q_targets_next * dones)
         # Compute critic loss
         Q_expected = self.critic_local(states, actions)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
@@ -155,7 +155,7 @@ class Agent():
             state = env_info.state        # current state
             score = 0                     # initialize agent scores
             trajectory = [state[:2]]      # initialize trajectory 
-            actions = [state[2:]]
+            actions = [state[2:4]]
 
             while True:
 
