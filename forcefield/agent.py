@@ -155,7 +155,7 @@ class Agent():
             state = env_info.state        # current state
             score = 0                     # initialize agent scores
             trajectory = [state[:2]]      # initialize trajectory 
-            actions = [state[2:4]]
+            actions = np.array([state[2],state[3])
 
             while True:
 
@@ -171,7 +171,7 @@ class Agent():
                 score += reward                         # update the score (for each agent)
                 state = next_state                               # enter next states
                 trajectory.append(env_info.pos)
-                actions.append(action)
+                np.append(actions,action)
 
                 if done:
                     break
