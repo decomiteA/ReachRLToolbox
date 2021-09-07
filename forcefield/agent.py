@@ -19,7 +19,7 @@ TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
 LR_CRITIC = 1e-5        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
-NOISE_WEIGHT_DECAY = 0.7
+NOISE_WEIGHT_DECAY = 0.99
 NOISE_WEIGHT_START = 1
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -76,7 +76,7 @@ class Agent():
         self.actor_local.train()
         if add_noise:
             noise_sample = np.random.normal(scale=1) * self.noise_w
-            self.noise_w = self.noise_w * self.noise_wd
+            self.noise_w = self.noise_w
             action += noise_sample
         return np.clip(action, -50, 50)
 
