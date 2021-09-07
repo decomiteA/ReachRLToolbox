@@ -20,7 +20,7 @@ LR_ACTOR = 1e-4         # learning rate of the actor
 LR_CRITIC = 1e-5        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
 NOISE_WEIGHT_DECAY = 0.99
-NOISE_WEIGHT_START = 1
+NOISE_WEIGHT_START = 0.1
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
