@@ -3,7 +3,7 @@ import torch
 
 class TargetReach():
     
-    def __init__(self, start_pos = (.5, 1), goal = (.1, .9, -.8, 0), space_padding = 5, max_len=60, discover=False):
+    def __init__(self, start_pos = (.5, 1), goal = (.1, .9, -.8, 0), space_padding = 5, max_len=50, discover=False):
         """Initialize forcefield environment.
         Params
         ======
@@ -65,12 +65,21 @@ class TargetReach():
     def dist2target(self, pos):
         """Calculates the euclidian/shortest distance of agent from target box. Used to calculate the error cost applied to \
         reward when discovery=False, i.e. the agent can "see" how far it is from the target box. 
+        
+
+        Add different conditions - When x- or y- axis are good only
         """
-        dist = np.sqrt(min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))**2+min(np.absolute(pos[1]-self.goal[2]),np.absolute(pos[1]-self.goal[3]))**2)
+
+        if self.goal[0]<=pos[0] and self.goal[1]>=pos[0]:
+            dist = min(np.absolute(pos[1]-self.goal[2]),np.absolute(pos[1]-self.goal[3]))
+        elif self.goal[2]<=pos[1] and self.goal[3]>=pos[1]:
+            dist = min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))
+        else:
+            dist = np.sqrt(min(np.absolute(pos[0]-self.goal[0]),np.absolute(pos[0]-self.goal[1]))**2+min(np.absolute(pos[1]-self.goal[2]),np.absolute(pos[1]-self.goal[3]))**2)
         return dist
     
         
-    def step(self, action, cost = 0.002, stay_time=1):
+    def step(self, action, cost = 0.02, stay_time=1):
         """Agent acts in the environment and gets the resulting next state and reward obtained.
         The system dynamics comes from Nashed et al. 2012
         Params
@@ -84,7 +93,7 @@ class TargetReach():
         self.time += 1
         dt, kv, tau = 0.01, 1, 0.04
 
-        # Calculate new state using the Newtonian dynamics
+        # Calculate new state using the Newtonian dynamics - verif
         x_pos = self.state[0] + self.state[2]*dt
         y_pos = self.state[1] + self.state[3]*dt
         x_vel = (1-kv*dt) * self.state[2] + dt * self.state[4]
@@ -93,7 +102,7 @@ class TargetReach():
         y_force = (1-dt/tau) * self.state[5] + dt/tau * action[1] + np.random.normal(0., 0.01)
         
         # Apply forcefield:
-        if (self.state[1] + y_vel*dt) < self.ff_lim[0] and (self.state[1] + y_vel*dt) > self.ff_lim[1]:
+        if (self.state[1] + y_vel*dt) > self.ff_lim[0] and (self.state[1] + y_vel*dt) < self.ff_lim[1]:
             x_vel = x_vel + self.ff_force[0]*dt
             y_vel = y_vel + self.ff_force[1]*dt
 
@@ -107,17 +116,17 @@ class TargetReach():
             if self.goal[2] <= self.pos[1] and self.goal[3] >= self.pos[1]: # reached goal in y dimension
                 self.target_counter += 1
                 if self.target_counter >= stay_time:
-                    self.reward = 20 - np.linalg.norm(action, 2) * cost # INCREASE FOR SUCCESSFUL TRIALS
+                    self.reward = 1- np.linalg.norm(action, 2) * cost # INCREASE FOR SUCCESSFUL TRIALS
                     self.done = True
                 
-        elif self.bounds[0] <= self.pos[0] or self.bounds[1] >= self.pos[0] or self.bounds[2] >= self.pos[1] \
+        elif self.bounds[0] >= self.pos[0] or self.bounds[1] <= self.pos[0] or self.bounds[2] >= self.pos[1] \
         or self.bounds[3] <= self.pos[1]: # exited workspace
             self.reward = -10 - np.linalg.norm(action, 2) * cost
             self.done = True 
                 
         elif self.time >= self.max_len:     # reached time limit
-            self.reward = -10 - np.linalg.norm(action, 2) * cost
-            self.reward += self.dist2tar(self,self.pos)*(1-self.discover)
+            self.reward = - np.linalg.norm(action, 2) * cost
+            self.reward -= self.dist2target(self.pos)*(1-self.discover)
             self.done = True 
             
         else:                             # not finished 
@@ -129,4 +138,71 @@ class TargetReach():
 class MultiTarget(TargetReach):
     pass
                            
-        
+class ReachToPoint(TargetReach):
+    def __init__(self, start_pos=(0.5, 1), goal=(0,0), space_padding=5,max_len=60,discover=False):
+        """Initialize ReachToPoint environment
+        """
+
+        self.action_size =2
+        self.max_len = max_len
+        self.discover = False
+
+        # start position - goal target - workspace bounds
+        self.start_pos = start_pos
+        self.goal = goal
+        self.bounds = (goal[0]-space_padding, goal[0]+space_padding, goal[1]-space_padding, goal[1]+space_padding)
+
+        # add force fields
+        self.ff_force = (0,0)
+        self.ff_lim = self.bounds[-2:]
+
+    def dist2target(self,pos):
+        """
+        computes the distance to the target
+        """
+        return np.linalg.norm(pos,2)
+
+    def step(self,action, cost=0,stay_time=1):
+        """
+        agent acts in the environment and gets the resulting next state and reward
+        """
+
+        # add time
+        self.time +=1
+        dt, kv, tau = 0.01, 1, 0.04
+
+        #calculate new state using newtonian dynamics
+
+        x_pos = self.state[0] + self.state[2]*dt
+        y_pos = self.state[1] + self.state[3]*dt
+        x_vel = (1-kv*dt) * self.state[2] + dt*self.state[4]
+        y_vel = (1-kv*dt) * self.state[3] + dt*self.state[5]
+        x_force = (1-dt/tau) * self.state[4] + dt/tau * action[0] + np.random.normal(0.,0.01)
+        y_force = (1-dt/tau) * self.state[5] + dt/tau * action[1] + np.random.normal(0.,0.01)
+
+        #Apply forcefield
+        if (self.state[1]+y_vel*dt)>self.ff_lim[0] and (self.state[1]+y_vel*dt) < self.ff_lim[1]:
+            x_vel = x_vel + self.ff_force[0]*dt
+            y_vel = y_vel + self.ff_force[1]*dt
+
+        #update position and state
+        self.pos = (x_pos,y_pos)
+        self.speed = (x_vel,y_vel)
+        self.state = np.array([x_pos,y_pos,x_vel,y_vel,x_force,y_force])
+
+        #reward  (never reached in this case as we have a single goal target)
+
+        if self.bounds[0]>=self.pos[0] or self.bounds[1]<=self.pos[0] or self.bounds[2]>=self.pos[1] or self.bounds[3]<=self.pos[1]:
+            self.reward = -10 - np.linalg.norm(action,2)*cost
+            self.done = True
+        elif self.time >= self.max_len:
+            self.reward = -np.linalg.norm(action,2)*cost
+            self.reward -= self.dist2target(self.pos)*(1-self.discover)
+            self.done = True
+
+        else:  
+            self.reward = - np.linalg.norm(action,2)*cost
+            self.done = False
+
+        return self
+

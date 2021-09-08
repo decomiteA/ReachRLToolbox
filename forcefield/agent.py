@@ -19,8 +19,8 @@ TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
 LR_CRITIC = 1e-5        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
-NOISE_WEIGHT_DECAY = 0.7
-NOISE_WEIGHT_START = 1
+NOISE_WEIGHT_DECAY = 0.99
+NOISE_WEIGHT_START = 0.1
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -76,9 +76,9 @@ class Agent():
         self.actor_local.train()
         if add_noise:
             noise_sample = np.random.normal(scale=1) * self.noise_w
-            self.noise_w = self.noise_w * self.noise_wd
+            self.noise_w = self.noise_w
             action += noise_sample
-        return np.clip(action, -.5, .5)
+        return np.clip(action, -50, 50)
 
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
@@ -99,7 +99,7 @@ class Agent():
         actions_next = self.actor_target(next_states)
         Q_targets_next = self.critic_target(next_states, actions_next)
         # Compute Q targets for current states (y_i)
-        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        Q_targets = rewards + (gamma * Q_targets_next * dones)
         # Compute critic loss
         Q_expected = self.critic_local(states, actions)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
@@ -155,7 +155,7 @@ class Agent():
             state = env_info.state        # current state
             score = 0                     # initialize agent scores
             trajectory = [state[:2]]      # initialize trajectory 
-            actions = [state[2:]]
+            actions = np.array([state[2],state[3]])
 
             while True:
 
@@ -171,7 +171,7 @@ class Agent():
                 score += reward                         # update the score (for each agent)
                 state = next_state                               # enter next states
                 trajectory.append(env_info.pos)
-                actions.append(action)
+                actions=np.append(actions,action)
 
                 if done:
                     break
