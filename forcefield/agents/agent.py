@@ -178,7 +178,7 @@ class Agent():
                 if done:
                     break
 
-            trajectories.add_episode(trajectory)
+            trajectories.add_episode(trajectory,score)
 
             scores_deque.append(np.mean(score))
             scores.append(np.mean(score))
@@ -253,14 +253,16 @@ class Trajectories():
         """
         
         self.trajectories = []
+        self.scores = []
         self.max_len = env.max_len
         
         # goal box and workspace bounds
         self.goal = env.goal
         self.bounds = env.bounds 
         
-    def add_episode(self, positions):
+    def add_episode(self, positions,score):
         self.trajectories.append(positions)
+        self.scores.append(score)
         
     def plot(self, idx, legend = False, color = 'magma', scale=True, boxcol = 'r', boxalpha = 0.1):
         """Plot a select number of indices.
@@ -328,9 +330,9 @@ class Trajectories():
             elif legend and i==len(self.trajectories[-1])-1:
                 axs[1].plot(pt[0],pt[1],'ro',label='end',ms=15)
             else:
-                continue
+                axs[1].plot(pt[0],pt[1],'o')
 
-        axs[1].plot(self.trajectories[-1][0],self.trajectories[-1][1],'k-',lw=2)
+        
         axs[1].add_patch(goal_patches)
         axs[1].set_xlabel('x-position')
         axs[1].set_ylabel('y-position')
