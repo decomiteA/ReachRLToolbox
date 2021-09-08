@@ -1,12 +1,14 @@
 import numpy as np
 import random
 import copy
+import sys
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib import cm
 from collections import namedtuple, deque
+sys.path.append('../')
 
-from model import Actor, Critic
+from models.model import Actor, Critic
 
 import torch
 import torch.nn.functional as F
