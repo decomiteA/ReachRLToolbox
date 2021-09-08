@@ -20,7 +20,7 @@ class TargetReach():
         
         self.action_size = 2 # (x_acceleration, y_acceleration)
         self.max_len = max_len
-        self.discover = False 
+        self.discover = discover 
         
         # start position, goal box, workspace bounds
         self.start_pos = start_pos 
