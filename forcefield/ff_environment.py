@@ -107,16 +107,16 @@ class TargetReach():
             if self.goal[2] <= self.pos[1] and self.goal[3] >= self.pos[1]: # reached goal in y dimension
                 self.target_counter += 1
                 if self.target_counter >= stay_time:
-                    self.reward = 20 - np.linalg.norm(action, 2) * cost # INCREASE FOR SUCCESSFUL TRIALS
+                    self.reward = 200 - np.linalg.norm(action, 2) * cost # INCREASE FOR SUCCESSFUL TRIALS
                     self.done = True
                 
         elif self.bounds[0] <= self.pos[0] or self.bounds[1] >= self.pos[0] or self.bounds[2] >= self.pos[1] \
         or self.bounds[3] <= self.pos[1]: # exited workspace
-            self.reward = -10 - np.linalg.norm(action, 2) * cost
+            self.reward = -1 - np.linalg.norm(action, 2) * cost
             self.done = True 
                 
         elif self.time >= self.max_len:     # reached time limit
-            self.reward = -10 - np.linalg.norm(action, 2) * cost
+            self.reward = -1 - np.linalg.norm(action, 2) * cost
             self.reward += self.dist2tar(self,self.pos)*(1-self.discover)
             self.done = True 
             
