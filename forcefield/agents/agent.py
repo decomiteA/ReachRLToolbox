@@ -18,11 +18,10 @@ BUFFER_SIZE = int(1e4)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-5        # learning rate of the critic
+LR_ACTOR = 1e-3         # learning rate of the actor 
+LR_CRITIC = 1e-4        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
-NOISE_WEIGHT_DECAY = 0.99
-NOISE_WEIGHT_START = 0.1
+EPSILON_DECAY = 0.95
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -30,8 +29,7 @@ class Agent():
     """Interacts with and learns from the environment."""
     
     
-    def __init__(self, state_size, action_size, random_seed, noise_weight = NOISE_WEIGHT_START, 
-                 noise_weight_decay = NOISE_WEIGHT_DECAY):
+    def __init__(self, state_size, action_size, random_seed, eps = .3):
         """Initialize an Agent object.
         
         Params
@@ -43,8 +41,8 @@ class Agent():
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(random_seed)
-        self.noise_w = noise_weight
-        self.noise_wd = noise_weight_decay
+        self.eps = eps
+        self.randoms = []
 
         # Actor Network (w/ Target Network)
         self.actor_local = Actor(state_size, action_size, random_seed).to(device)
@@ -70,24 +68,28 @@ class Agent():
     def act(self, state, add_noise=True):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
-        self.actor_local.eval()
-        
-        with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy()
-                
-        self.actor_local.train()
-        if add_noise:
-            noise_sample = np.random.normal(scale=1) * self.noise_w
-            self.noise_w = self.noise_w
-            action += noise_sample
+
+        if np.random.random() > self.eps:
+            with torch.no_grad():
+                self.actor_local.eval()
+                action = self.actor_local(state).cpu().data.numpy()
+                self.actor_local.train()
+        else:
+            # action = np.random.choice(np.arange(self.action_size))
+            action = np.random.uniform(low=-50, high=50, size=self.action_size)
+            self.randoms.append(action)
+
         return np.clip(action, -50, 50)
 
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
         Q_targets = r + γ * critic_target(next_state, actor_target(next_state))
-        where:
-            actor_target(state) -> action
-            critic_target(state, action) -> Q-value
+        Inputs
+        ======
+        actor_target(state)
+            action
+        critic_target(state, action)
+            Q-value
         Params
         ======
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
@@ -135,7 +137,7 @@ class Agent():
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
             
-    def train_ddpg(self, env, n_episodes = 1000, print_every = 100, stop = True):
+    def train_ddpg(self, env, n_episodes = 1000, print_every = 100, stop = True, eps_decay = EPSILON_DECAY):
         """Train the agent in the Forcefield environment using ddpg. 
         Params
         ======
@@ -176,6 +178,7 @@ class Agent():
                 actions=np.append(actions,action)
 
                 if done:
+                    self.eps = self.eps * eps_decay
                     break
 
             trajectories.add_episode(trajectory,score)
@@ -201,7 +204,7 @@ class Agent():
             if solved and stop:
                 break
 
-        return scores, trajectories, actions_tracker
+        return scores, trajectories, actions_tracker, self.randoms
         
 
 class ReplayBuffer:
