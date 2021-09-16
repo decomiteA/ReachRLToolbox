@@ -21,7 +21,7 @@ TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-3         # learning rate of the actor 
 LR_CRITIC = 1e-4        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
-EPSILON_DECAY = 0.95
+EPSILON_DECAY = 0.98
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -42,7 +42,7 @@ class Agent():
         self.action_size = action_size
         self.seed = random.seed(random_seed)
         self.eps = eps
-        self.randoms = []
+        self.random_trial = False 
 
         # Actor Network (w/ Target Network)
         self.actor_local = Actor(state_size, action_size, random_seed).to(device)
@@ -69,7 +69,7 @@ class Agent():
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
 
-        if np.random.random() > self.eps:
+        if not self.random_trial:
             with torch.no_grad():
                 self.actor_local.eval()
                 action = self.actor_local(state).cpu().data.numpy()
@@ -77,7 +77,6 @@ class Agent():
         else:
             # action = np.random.choice(np.arange(self.action_size))
             action = np.random.uniform(low=-50, high=50, size=self.action_size)
-            self.randoms.append(action)
 
         return np.clip(action, -50, 50)
 
@@ -148,12 +147,16 @@ class Agent():
         """
         trajectories = Trajectories(env)
     
+        random_trials = []
         scores = []
         actions_tracker = []
         scores_deque = deque(maxlen=print_every)
         solved = False
 
         for i_episode in range(n_episodes):
+            
+            self.random_trial = np.random.random() < self.eps
+            random_trials.append(self.random_trial)
             
             env_info = env.reset()
             state = env_info.state        # current state
@@ -204,7 +207,7 @@ class Agent():
             if solved and stop:
                 break
 
-        return scores, trajectories, actions_tracker, self.randoms
+        return scores, trajectories, actions_tracker, self.random_trials
         
 
 class ReplayBuffer:
