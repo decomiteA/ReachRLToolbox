@@ -38,40 +38,31 @@ class Agent():
 
 
         # Actor Network (w/ Target Network)
-        self.actor_local = Actor(state_size, action_size, random_seed).to(device)
-        self.actor_target = Actor(state_size, action_size, random_seed).to(device)
-        self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
+        self.actor = Actor(alpha,state_size,action_size,layer1_size,layer2_size)
+        self.critic = Critic(beta,state_size,action_size,layer1_size,layer2_size)
 
-        # Critic Network (w/ Target Network)
-        self.critic_local = Critic(state_size, action_size, random_seed).to(device)
-        self.critic_target = Critic(state_size, action_size, random_seed).to(device)
-        self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
+        self.target_actor = Actor(alpha,state_size,action_size,layer1_size,layer2_size)
+        self.target_critic = Critic(alpha,state_size,action_size,layer1_size,layer2_size)
 
-        # Replay memory
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
+        self.noise = OUActionNoise(mu=np.zeros(n_actions))
+
+        self.update_network_parameters(tau=1)
+        
     
-    def step(self, state, action, reward, next_state, done):
-        """Save experience in replay memory, and use random sample from buffer to learn."""
-        self.memory.add(state, action, reward, next_state, done)
-        
-        if len(self.memory) > BATCH_SIZE and done:
-            experiences = self.memory.sample()
-            self.learn(experiences, GAMMA)
-
-    def act(self, state, add_noise=True):
+    
+    def act(self, state):
         """Returns actions for given state as per current policy."""
-        state = torch.from_numpy(state).float().to(device)
-        self.actor_local.eval()
+        self.actor.eval()
+        observation = torch.tensor(state,dtype=torch.float).to(self.actor.device)
+        mu = self.actor.forward(observation).to(self.actor.device)
+        mu_prime = 10*mu + torch.tensor(self.noise(),dtype=torch.float).to(self.actor.device)
+
+        self.actor.train()
+        return mu_prime.cpu().detach().numpy()
         
-        with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy()
-                
-        self.actor_local.train()
-        if add_noise:
-            noise_sample = np.random.normal(scale=1) * self.noise_w
-            self.noise_w = self.noise_w
-            action += noise_sample
-        return np.clip(action, -50, 50)
+
+    def remember(self,state,action,reward,new_state,done):
+        self.memory.store_transition(state,action,reward,new_state,done)
 
     def learn(self, experiences, gamma):
         """Update policy and value parameters using given batch of experience tuples.
