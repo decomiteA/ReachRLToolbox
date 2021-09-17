@@ -52,15 +52,17 @@ class Actor(nn.Module):
 
         self.to(self.device)
 
-    def reset_parameters(self):
-        self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
-        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        self.fc3.weight.data.uniform_(-3e-3, 3e-3)
+    
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""
-        x = torch.tanh(self.fc1(state))
-        x = torch.tanh(self.fc2(x))
-        return torch.tanh(self.fc3(x))
+        x = self.fc1(state)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = torch.tanh(self.mu(x))
+        return x
 
 
 class Critic(nn.Module):
