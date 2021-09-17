@@ -2,6 +2,9 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
 
 def hidden_init(layer):
     fan_in = layer.weight.data.size()[0]
