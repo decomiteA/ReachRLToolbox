@@ -80,47 +80,79 @@ class Agent():
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
             gamma (float): discount factor
         """
+        if self.memory.mem_cntr < self.batch_size:
+            return
 
-        states, actions, rewards, next_states, dones = experiences
+        state, action, reward, new_state, done = self.memory.sample(self.batch_size)
+
+        reward = torch.tensor(reward,dtype=torch.float).to(self.critic.device)
+        done = torch.tensor(done).to(self.critic.device)
+        new_state = torch.tensor(new_state,dtype=torch.float).to(self.critic.device)
+        action = torch.tensor(action,dtype=torch.float).to(self.critic.device)
+        state = torch.tensor(state,dtype=torch.float).to(self.critic.device)
+
+
 
         # ---------------------------- update critic ---------------------------- #
         # Get predicted next-state actions and Q values from target models
-        actions_next = self.actor_target(next_states)
-        Q_targets_next = self.critic_target(next_states, actions_next)
-        # Compute Q targets for current states (y_i)
-        Q_targets = rewards + (gamma * Q_targets_next * dones)
-        # Compute critic loss
-        Q_expected = self.critic_local(states, actions)
-        critic_loss = F.mse_loss(Q_expected, Q_targets)
-        # Minimize the loss
-        self.critic_optimizer.zero_grad()
+        self.target_actor.eval()
+        self.target_critic.eval()
+        self.critic.eval()
+        actions_next = self.target_actor.forward(new_state)
+        Q_targets_next = self.target_critic.forward(new_state, actions_next)
+        
+        Q_expected = self.critic.forward(state, action)
+        
+        target =[] 
+        for j in range(self.batch_size):
+            target.append(reward[j] + self.gamma*Q_targets_next[j]*done[j])
+        target = torch.tensor(target).to(self.critic.device)
+        target = target.view(self.batch-size,1)
+
+        self.critic.train()
+        self.critic.optimizer.zero_grad()
+        critic_loss = F.mse_loss(Q_expected, target)
         critic_loss.backward()
         self.critic_optimizer.step()
 
         # ---------------------------- update actor ---------------------------- #
         # Compute actor loss
-        actions_pred = self.actor_local(states)
-        actor_loss = -self.critic_local(states, actions_pred).mean()
-        # Minimize the loss
-        self.actor_optimizer.zero_grad()
+        self.critic.eval()
+        self.actor.optimizer.zero_grad()
+        mu = self.actor.forward(state)
+        self.actor.train()
+        actor_loss = - self.critic.forward(state,mu)
+        actor_loss = torch.mean(actor_loss)
+        
         actor_loss.backward()
-        self.actor_optimizer.step()
+        self.actor.optimizer.step()
 
-        # ----------------------- update target networks ----------------------- #
-        self.soft_update(self.critic_local, self.critic_target, TAU)
-        self.soft_update(self.actor_local, self.actor_target, TAU)                     
+        self.update_network_parameters()                     
 
-    def soft_update(self, local_model, target_model, tau):
-        """Soft update model parameters.
-        θ_target = τ*θ_local + (1 - τ)*θ_target
-        Params
-        ======
-            local_model: PyTorch model (weights will be copied from)
-            target_model: PyTorch model (weights will be copied to)
-            tau (float): interpolation parameter 
-        """
-        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+    def soft_update(self,tau=None):
+        
+        if tau is None:
+            tau = self.tau
+
+        actor_params = self.actor.named_parameters()
+        critic_params = self.critic.named_parameters()
+        target_actor_params = self.target_actor.named_parameters()
+        target_critic_params = self.target_critic.named_parameters()
+
+        critic_state_dict = dict(critic_params)
+        actor_state_dict = dict(actor_params)
+        target_critic_dict = dict(target_critic_params)
+        target_actor_dict = dict(target_actor_params)
+
+        for name in critic_state_dict:
+            critic_state_dict[name] = tau*critic_state_dict[name].clone() + (1-tau)*target_critic_dict[name].clone()
+
+        self.target_critic.load_state_dict(critic_state_dict)
+
+        for name in actor_state_dict:
+            actor_state_dict[name] = tau*actor_state_dict[name].clone() + (1-tau)*target_actor_dict[name].clone()
+
+        self.target_actor.load_state_dict(actor_state_dict)
             
     def train_ddpg(self, env, n_episodes = 1000, print_every = 100, stop = True):
         """Train the agent in the Forcefield environment using ddpg. 
