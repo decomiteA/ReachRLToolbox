@@ -14,17 +14,39 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-BUFFER_SIZE = int(1e4)  # replay buffer size
-BATCH_SIZE = 128        # minibatch size
+BUFFER_SIZE = int(1e5)  # replay buffer size
+BATCH_SIZE = 64        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-5        # learning rate of the critic
+LR_ACTOR = 0.000025         # learning rate of the actor 
+LR_CRITIC = 0.00025        # learning rate of the critic
 WEIGHT_DECAY = 0        # L2 weight decay
 NOISE_WEIGHT_DECAY = 0.99
 NOISE_WEIGHT_START = 0.1
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+class OUActionNoise(object):
+    def __init__(self,mu,sigma=0.015,theta=.2,dt=1e-2,x0=None):
+        self.theta = theta
+        self.mu = mu
+        self.sigma = sigma
+        self.dt = dt
+        self.x0 = x0
+        self.reset()
+
+    def __call__(self):
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+        self.x_prev = x
+        
+        return x
+
+    def reset(self):
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+
+    def __repr__(self):
+        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu,self.sigma)
+
 
 class Agent():
     """Interacts with and learns from the environment."""
@@ -47,10 +69,10 @@ class Agent():
         self.actor = Actor(state_size,action_size,layer1_size,layer2_size,LR_ACTOR)
         self.critic = Critic(state_size,action_size,layer1_size,layer2_size,LR_CRITIC)
 
-        self.target_actor = ActorNetwork(state_size,action_size,layer1_size,layer2_size,LR_ACTOR)
-        self.target_critic = CriticNetwork(state_size,action_size,layer1_size,layer2_size,LR_CRITIC)
+        self.target_actor = Actor(state_size,action_size,layer1_size,layer2_size,LR_ACTOR)
+        self.target_critic = Critic(state_size,action_size,layer1_size,layer2_size,LR_CRITIC)
 
-        self.noise = OUActionNoise(mu=np.zeros(n_actions))
+        self.noise = OUActionNoise(mu=np.zeros(action_size))
 
         self.update_network_parameters(tau=1)
     
@@ -64,12 +86,12 @@ class Agent():
         observation = torch.tensor(state,dtype=torch.float).to(self.actor.device)
 
         mu = self.actor.forward(observation).to(self.actor.device)
-        mu_prime = 10*mu + torch.tensor(self.noise(), dtype=torch.float).to(self.actor.device)
+        mu_prime = (mu + torch.tensor(self.noise(), dtype=torch.float).to(self.actor.device))
 
         self.actor.train()
         return mu_prime.cpu().detach().numpy()
 
-    def learn(self, experiences, gamma):
+    def learn(self, gamma):
         """Update policy and value parameters using given batch of experience tuples.
         Q_targets = r + γ * critic_target(next_state, actor_target(next_state))
         where:
@@ -107,13 +129,13 @@ class Agent():
         for j in range(self.batch_size):
             target.append(reward[j] + self.gamma*Q_targets_next[j]*done[j])
         target = torch.tensor(target).to(self.critic.device)
-        target = target.view(self.batch-size,1)
+        target = target.view(self.batch_size,1)
 
         self.critic.train()
         self.critic.optimizer.zero_grad()
         critic_loss = F.mse_loss(Q_expected, target)
         critic_loss.backward()
-        self.critic_optimizer.step()
+        self.critic.optimizer.step()
 
         # ---------------------------- update actor ---------------------------- #
         # Compute actor loss
@@ -129,7 +151,7 @@ class Agent():
 
         self.update_network_parameters()                     
 
-    def soft_update(self,tau=None):
+    def update_network_parameters(self,tau=None):
         
         if tau is None:
             tau = self.tau
@@ -188,7 +210,7 @@ class Agent():
                 done = env_info.done                      # see if trial is finished
 
                 self.step(state, action, reward, next_state, done)
-
+                self.learn(GAMMA)
                 score += reward                         # update the score (for each agent)
                 state = next_state                               # enter next states
                 trajectory.append(env_info.pos)
@@ -206,16 +228,16 @@ class Agent():
             print('\rEpisode {} \tAverage Reward: {:.2f}'.format(i_episode, np.mean(scores_deque)), end="")
 
             if i_episode % print_every == 0:
-                torch.save(self.actor_local.state_dict(), 'actor_model.pth')
-                torch.save(self.critic_local.state_dict(), 'critic_model.pth')
+                torch.save(self.actor.state_dict(), 'actor_model.pth')
+                torch.save(self.critic.state_dict(), 'critic_model.pth')
                 print('\rEpisode {} \tAverage Reward: {:.2f}'.format(i_episode, np.mean(scores_deque)))
 
             if np.mean(scores_deque) >= 5:
                 if not solved:
                     solved = True 
                     print('\nEnvironment solved in {:d} episodes!\t Average Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
-                    torch.save(self.actor_local.state_dict(), 'actor_solved.pth')
-                    torch.save(self.critic_local.state_dict(), 'critic_solved.pth')
+                    torch.save(self.actor.state_dict(), 'actor_solved.pth')
+                    torch.save(self.critic.state_dict(), 'critic_solved.pth')
                 
             if solved and stop:
                 break
@@ -236,7 +258,7 @@ class ReplayBuffer:
         self.mem_size = max_size
         self.mem_cntr = 0
         self.state_memory = np.zeros((self.mem_size,input_shape))
-        self.new_state_memory = np.zeros((self.mem_size,input_size))
+        self.new_state_memory = np.zeros((self.mem_size,input_shape))
         self.action_memory = np.zeros((self.mem_size, action_size))
         self.reward_memory = np.zeros(self.mem_size)
         self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
