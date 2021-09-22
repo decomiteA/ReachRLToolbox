@@ -26,7 +26,7 @@ class Actor(nn.Module):
         """
         super(Actor, self).__init__()
         
-        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc1 = nn.Linear(*state_size, fc1_units)
         f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
         torch.nn.init.uniform_(self.fc1.weight.data,-f1,f1)
         torch.nn.init.uniform_(self.fc1.bias.data,-f1,f1)
@@ -44,7 +44,7 @@ class Actor(nn.Module):
         torch.nn.init.uniform_(self.mu.bias.data,-f3,f3)
         
         self.optimizer = optim.Adam(self.parameters(),lr=alpha)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.to(self.device)
 
@@ -79,7 +79,7 @@ class Critic(nn.Module):
         
 
 
-        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc1 = nn.Linear(*state_size, fc1_units)
         f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
         torch.nn.init.uniform_(self.fc1.weight.data,-f1,f1)
         torch.nn.init.uniform_(self.fc1.bias.data,-f1,f1)
@@ -98,7 +98,7 @@ class Critic(nn.Module):
         torch.nn.init.uniform_(self.q.bias.data,-f3,f3)
         
         self.optimizer = optim.Adam(self.parameters(), lr=beta)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.to(self.device)
 

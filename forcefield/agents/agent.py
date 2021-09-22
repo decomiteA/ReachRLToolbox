@@ -24,7 +24,7 @@ WEIGHT_DECAY = 0        # L2 weight decay
 NOISE_WEIGHT_DECAY = 0.99
 NOISE_WEIGHT_START = 0.1
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class OUActionNoise(object):
     def __init__(self,mu,sigma=0.015,theta=.2,dt=1e-2,x0=None):
@@ -257,8 +257,8 @@ class ReplayBuffer:
         """
         self.mem_size = max_size
         self.mem_cntr = 0
-        self.state_memory = np.zeros((self.mem_size,input_shape))
-        self.new_state_memory = np.zeros((self.mem_size,input_shape))
+        self.state_memory = np.zeros((self.mem_size,*input_shape))
+        self.new_state_memory = np.zeros((self.mem_size,*input_shape))
         self.action_memory = np.zeros((self.mem_size, action_size))
         self.reward_memory = np.zeros(self.mem_size)
         self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
@@ -336,7 +336,7 @@ class Trajectories():
         ax.set_ylim(ylims[0], ylims[1])
         
         for i, pt in enumerate(self.trajectories[idx]):
-            # ax.plot(pt[0], pt[1], 'o', color=cmap.colors[i])
+            # ax.plot(pt[0]device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'), pt[1], 'o', color=cmap.colors[i])
             if legend and i == 0:
                 ax.plot(pt[0], pt[1], 'o', color=cmap.colors[i], label='start')
             elif legend and i == len(self.trajectories[idx])-1:
