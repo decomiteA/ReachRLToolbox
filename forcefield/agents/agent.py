@@ -24,7 +24,7 @@ WEIGHT_DECAY = 0        # L2 weight decay
 NOISE_WEIGHT_DECAY = 0.99
 NOISE_WEIGHT_START = 0.1
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class OUActionNoise(object):
     def __init__(self,mu,sigma=0.015,theta=.2,dt=1e-2,x0=None):
