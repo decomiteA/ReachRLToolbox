@@ -44,7 +44,7 @@ class Actor(nn.Module):
         torch.nn.init.uniform_(self.mu.bias.data,-f3,f3)
         
         self.optimizer = optim.Adam(self.parameters(),lr=alpha)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.to(self.device)
 
@@ -98,7 +98,7 @@ class Critic(nn.Module):
         torch.nn.init.uniform_(self.q.bias.data,-f3,f3)
         
         self.optimizer = optim.Adam(self.parameters(), lr=beta)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.to(self.device)
 
