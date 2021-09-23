@@ -85,7 +85,7 @@ class Agent():
         self.actor.eval()
         observation = torch.tensor(state,dtype=torch.float).to(self.actor.device)
 
-        mu = self.actor.forward(observation).to(self.actor.device)
+        mu =50* self.actor.forward(observation).to(self.actor.device)
         mu_prime = (mu + torch.tensor(self.noise(), dtype=torch.float).to(self.actor.device))
 
         self.actor.train()
@@ -224,8 +224,8 @@ class Agent():
             scores_deque.append(np.mean(score))
             scores.append(np.mean(score))
             actions_tracker.append(actions)
-
-            print('\rEpisode {} \tAverage Reward: {:.2f}'.format(i_episode, np.mean(scores_deque)), end="")
+            # print('episode',i_episode,'score %.1f' % score, 'average score %.1f' % np.mean(scores_deque))
+            
 
             if i_episode % print_every == 0:
                 torch.save(self.actor.state_dict(), 'actor_model.pth')
@@ -257,8 +257,8 @@ class ReplayBuffer:
         """
         self.mem_size = max_size
         self.mem_cntr = 0
-        self.state_memory = np.zeros((self.mem_size,*input_shape))
-        self.new_state_memory = np.zeros((self.mem_size,*input_shape))
+        self.state_memory = np.zeros((self.mem_size,input_shape))
+        self.new_state_memory = np.zeros((self.mem_size,input_shape))
         self.action_memory = np.zeros((self.mem_size, action_size))
         self.reward_memory = np.zeros(self.mem_size)
         self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
