@@ -26,7 +26,7 @@ class Actor(nn.Module):
         """
         super(Actor, self).__init__()
         
-        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc1 = nn.Linear(*state_size, fc1_units)
         f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
         torch.nn.init.uniform_(self.fc1.weight.data,-f1,f1)
         torch.nn.init.uniform_(self.fc1.bias.data,-f1,f1)
@@ -57,7 +57,7 @@ class Actor(nn.Module):
         x = self.fc2(x)
         x = self.bn2(x)
         x = F.relu(x)
-        x = 50*torch.tanh(self.mu(x))
+        x = torch.tanh(self.mu(x))
         return x
 
 
@@ -79,7 +79,7 @@ class Critic(nn.Module):
         
 
 
-        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc1 = nn.Linear(*state_size, fc1_units)
         f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
         torch.nn.init.uniform_(self.fc1.weight.data,-f1,f1)
         torch.nn.init.uniform_(self.fc1.bias.data,-f1,f1)
@@ -91,7 +91,7 @@ class Critic(nn.Module):
         torch.nn.init.uniform_(self.fc2.bias.data,-f2,f2)
         self.bn2 = nn.LayerNorm(fc2_units)
 
-        self.action_value = nn.Linear(action_size,fc2_units)
+        self.action_value = nn.Linear(action_size+*state_size,fc2_units)
         f3=0.003
         self.q = nn.Linear(fc2_units,1)
         torch.nn.init.uniform_(self.q.weight.data,-f3,f3)
@@ -113,7 +113,7 @@ class Critic(nn.Module):
         state_value = self.bn2(state_value)
 
         action_value = F.relu(self.action_value(action))
-        state_action_value = F.relu(torch.add(state_value,action_value))
+        state_action_value = F.relu(torch.cat([state_value,action_value],1))
         state_action_value = self.q(state_action_value)
         return state_action_value
 
