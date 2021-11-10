@@ -15,13 +15,23 @@ class OneDimReach():
 		#start position - goal target - workspace bounds 
 		self.start_pos = start_pos
 		self.goal = goal
-		self.bounds = (goal[0]-space_padding, goal[0]+space_padding)
+		self.bounds = (goal-space_padding, goal+space_padding)
 
 	def dist2target(self,pos):
 		"""
 		Computes the distance to the target
 		"""
 		return np.linalg.norm(pos,2)
+	def reset(self,pos=.5):
+		"""Reset the environment to the starting position"""
+		self.pos = pos 
+		self.state = np.array([pos,0,0])
+		self.next_state = None
+		self.reward = 0
+		self.done = 0
+		self.time = 0
+		self.target_counter = 0
+		return self
 
 	def step(self,action,cost=0,stay_time=1):
 		"""
