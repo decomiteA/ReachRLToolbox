@@ -120,6 +120,7 @@ class Agent():
         for target_param,local_param in zip(target_model.parameters(),local_model.parameter()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
+
 class OUNoise:
     """Ornstein Uhlenbeck noise"""
     def __init__(self,size,seed,mu=0.0,theta=0.15,sigma=0.15,sigma_min=0.05,sigma_decay=0.975):
