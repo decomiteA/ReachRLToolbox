@@ -48,7 +48,7 @@ class Agent():
         #Critic network
         self.critic_local = Critic(state_size,action_size,random_seed).to(device)
         self.critic_target = Critic(state_size,action_size,random_seed).to(device)
-        self.critic_optimiser = optim.Adam(self.critic_local.parameters(),lr=LR_CRITIC,weight_decay=WEIGHT_DECAY)
+        self.critic_optimizer = optim.Adam(self.critic_local.parameters(),lr=LR_CRITIC,weight_decay=WEIGHT_DECAY)
 
         #Noise process
         self.noise = OUNoise(action_size,random_seed)
@@ -98,7 +98,9 @@ class Agent():
         actions_next = self.actor_target(next_states)
         Q_target_next = self.critic_target(next_states,actions_next)
         #Compute q_target for current state (y_i)
-        Q_target = rewards + (GAMMA * Q_targets_next * (1-dones))
+        Q_target = rewards + (GAMMA * Q_target_next * (1-dones))
+        #Compute critic loss
+        Q_expected = self.critic_local(states,actions)
         critic_loss = F.mse_loss(Q_expected, Q_target)
         #Minimize the loss
         self.critic_optimizer.zero_grad()
@@ -117,7 +119,7 @@ class Agent():
         self.soft_update(self.actor_local, self.actor_target, TAU)
 
     def soft_update(self, local_model, target_model, tau):
-        for target_param,local_param in zip(target_model.parameters(),local_model.parameter()):
+        for target_param,local_param in zip(target_model.parameters(),local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
@@ -146,41 +148,35 @@ class OUNoise:
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
 
-    def __init__(self, action_size,input_shape,max_size,seed):
+    def __init__(self, action_size,buffer_size,batch_size,seed):
         """Initialize a ReplayBuffer object.
         Params
         ======
             buffer_size (int): maximum size of buffer
             batch_size (int): size of each training batch
         """
-        self.mem_size = max_size
-        self.mem_cntr = 0
-        self.state_memory = np.zeros((self.mem_size,input_shape))
-        self.new_state_memory = np.zeros((self.mem_size,input_shape))
-        self.action_memory = np.zeros((self.mem_size, action_size))
-        self.reward_memory = np.zeros(self.mem_size)
-        self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
+        self.action_size = action_size
+        self.memory = deque(maxlen=buffer_size)
+        self.batch_size = batch_size
+        self.experience = namedtuple("Experience",field_names=["state","action","reward","next_state","done"])
+        self.seed = random.seed(seed)
     
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        index = self.mem_cntr % self.mem_size
-        self.state_memory[index] = state
-        self.new_state_memory[index] = next_state
-        self.action_memory[index] = action
-        self.reward_memory[index] = reward
-        self.terminal_memory[index] = 1-done
-        self.mem_cntr +=1
+        e = self.experience(state,action,reward,next_state,done)
+        self.memory.append(e)
     
-    def sample(self, batch_size):
+    def sample(self):
         """Randomly sample a batch of experiences from memory."""
-        max_mem = min(self.mem_cntr,self.mem_size)
+        experiences = random.sample(self.memory, k=self.batch_size)
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(device)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
+        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
 
-        batch = np.random.choice(max_mem,batch_size)
+        return (states, actions, rewards, next_states, dones)
 
-        states = self.state_memory[batch]
-        actions = self.action_memory[batch]
-        rewards = self.reward_memory[batch]
-        states_ = self.new_state_memory[batch]
-        terminal = self.terminal_memory[batch]
-
-        return states, actions, rewards, states_, terminal
+    def __len__(self):
+        """Returns the current size of internal memory"""
+        return len(self.memory)
