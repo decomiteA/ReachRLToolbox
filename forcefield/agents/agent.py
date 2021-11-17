@@ -180,3 +180,44 @@ class ReplayBuffer:
     def __len__(self):
         """Returns the current size of internal memory"""
         return len(self.memory)
+
+class Trajectories():
+
+    def __init__(self,env):
+        """
+        Params
+        ======
+        Trajectories = list of trajectoreis, where each trajectory is an array or list of the state
+        env = environment in which trajectories where performed
+        """
+
+        self.trajectories = []
+        self.scores = []
+        self.max_len = env.max_len
+
+        #goal box and workspace bounds 
+        self.goal = env.goal
+        self.bounds = env.bounds
+
+    def add_episode(self,position,scores):
+        self.trajectories.append(positions)
+        self.scores.append(score)
+
+    def plot(self,idx,legend=False,color='magma',scale=True,boxcol='r',boxalpha=0.1):
+        """
+        Plot a selected number of indices
+        Params
+        ======
+        idx = in index of trajectories to plot
+        cmap = colors to map with, from cm
+        scale = if True, samples from the colormap based on length of trial
+        """
+
+        if scale:
+            cmap = cm.get_cmap(color,len(self.trajectories[idx]))
+        else:
+            cmap = cm.get_cmap(color,self.max_len)
+
+        xlims = (self.bounds[0],self.bounds[1])
+        fix, ax = plt.subplots()
+
